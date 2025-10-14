@@ -1,0 +1,14 @@
+.env
+.env.*
+*.env
+!.env.example
+*.key
+*.secret
+.json
+.json.*
+*.json
+.pdf
+.pdf.*
+*.pdf
+
+fda_app.py
