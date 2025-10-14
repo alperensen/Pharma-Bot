@@ -10,5 +10,6 @@
 .pdf
 .pdf.*
 *.pdf
-
 fda_app.py
+__pycache__/
+venv/
