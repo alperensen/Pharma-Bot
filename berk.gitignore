@@ -4,3 +4,5 @@ setup.ipynb
 # You can also ignore other common files/folders
 __pycache__/
 *.ipynb_checkpoints
+*.secret
+*.key
