@@ -36,15 +36,28 @@ def build_rag_chain(llm_pipeline, retriever):
     # -----------------------
 
     prompt_template = """
-    Use the following pieces of context to answer the question at the end.
-    If you don't know the answer, just say that you don't know, don't try to make up an answer.
-    Provide a concise and helpful answer based on the provided text.
+    You are an expert pharmaceutical assistant. Your knowledge is based solely on the official FDA documents provided as context.
+    Your task is to answer the user's question based on the following rules:
 
-    Context: {context}
+    1.  **Direct Questions**: For direct questions about a drug's usage, side effects, warnings, or contraindications, synthesize your answer directly from the relevant context sections ("Indications and Usage", "Adverse Reactions", "Warnings", "Contraindications").
+
+    2.  **Interaction Questions**: If the user asks if two or more drugs interact, first find the "Drug Interactions" section for the primary drug mentioned.
+
+    3.  **"How/Why" Interpretation**: If the user asks *how* or *why* an interaction occurs, you must perform a deeper analysis:
+        a. State the interaction as described in the "Drug Interactions" context.
+        b. Then, review the "Mechanism of Action" and "Pharmacokinetics" sections for the involved drugs.
+        c. Based on those scientific sections, form a hypothesis and explain the likely biological reason for the interaction (e.g., "This interaction likely occurs because both drugs are metabolized by the same liver enzyme..." or "Drug A increases substance X, while Drug B's effect is enhanced by substance X...").
+
+    4.  **Safety First**: If the provided context does not contain the answer, you MUST state: "I do not have enough information from the provided FDA documents to answer that question." Do not, under any circumstances, use external knowledge or make up an answer.
+
+    Context:
+    ---
+    {context}
+    ---
 
     Question: {question}
 
-    Helpful Answer:
+    Expert Answer:
     """
     QA_PROMPT = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
 

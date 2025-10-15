@@ -29,17 +29,29 @@ def load_and_prepare_documents(json_path=config.RAW_DATA_PATH):
 
         # --- EDITED SECTION: More specific and high-value keys are prioritized ---
         sections_to_process = {
-            # Primary User Questions
-            "indications_and_usage": "Indications and Usage", # What is this drug for?
-            "adverse_reactions": "Adverse Reactions",       # What are the side effects?
-            "drug_interactions": "Drug Interactions",       # Can I take this with...?
-            "contraindications": "Contraindications",       # Who should NOT take this?
-            "warnings": "Warnings",                         # What are the major risks?
-            
-            # Secondary, more technical questions
-            "mechanism_of_action": "Mechanism of Action",   # How does it work?
-            "pharmacokinetics": "Pharmacokinetics",         # How does the body process it?
-            "dosage_and_administration": "Dosage and Administration" # How should I take it?
+            # Core Clinical Information
+            "indications_and_usage": "Indications and Usage",
+            "adverse_reactions": "Adverse Reactions",
+            "drug_interactions": "Drug Interactions",
+            "contraindications": "Contraindications",
+            "warnings": "Warnings",
+            "boxed_warning": "Boxed Warning",
+
+            # Scientific "How/Why" Information
+            "mechanism_of_action": "Mechanism of Action",
+            "pharmacokinetics": "Pharmacokinetics",
+
+            # Practical Use Information
+            "dosage_and_administration": "Dosage and Administration",
+            "how_supplied": "How Supplied",
+            "storage_and_handling": "Storage and Handling",
+            "information_for_patients": "Information for Patients",
+
+            # Special Populations
+            "pregnancy": "Pregnancy",
+            "nursing_mothers": "Nursing Mothers",
+            "pediatric_use": "Pediatric Use",
+            "geriatric_use": "Geriatric Use"
         }
         # --------------------------------------------------------------------------
 

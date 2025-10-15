@@ -20,7 +20,7 @@ def load_resources():
     load_dotenv()
     hf_token = os.getenv("HUGGING_FACE_TOKEN")
     if not hf_token:
-        st.error("Hugging Face token not found. Please add it to your .env file.")
+        st.error("Hugging Face token not found. Please add it to your .env file as HUGGING_FACE_TOKEN.")
         st.stop()
     
     embeddings = vector_store_manager.get_embeddings_model()
