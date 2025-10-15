@@ -9,7 +9,7 @@
 LLM_MODEL_ID = "meta-llama/Llama-3.2-3B-Instruct"
 
 # The embedding model for converting text to vectors
-EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+EMBEDDING_MODEL_NAME = "pritamdeka/S-BioBert-snli-multinli-stsb"
 
 # --- File Paths ---
 # Path to the raw data downloaded from the openFDA API
