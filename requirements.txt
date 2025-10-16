@@ -1,12 +1,11 @@
-transformers
-torch
-bitsandbytes
-accelerate
 langchain
 langchain-community
+langchain-google-genai
+google-generativeai
 sentence-transformers
 faiss-cpu
 streamlit
 python-dotenv
 requests
 tqdm
+sentence-transformers

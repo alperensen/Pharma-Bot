@@ -6,7 +6,7 @@
 
 # --- Model Settings ---
 # The main language model to be used in the RAG chain
-LLM_MODEL_ID = "meta-llama/Llama-3.2-3B-Instruct"
+LLM_MODEL_ID = "gemini-2.0-flash-001"
 
 # The embedding model for converting text to vectors
 EMBEDDING_MODEL_NAME = "pritamdeka/S-BioBert-snli-multinli-stsb"
