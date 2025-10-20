@@ -13,3 +13,5 @@
 fda_app.py
 __pycache__/
 venv/
+faiss_drug_index/
+faiss_drug_index_*/
