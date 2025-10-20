@@ -1,9 +1,0 @@
-# Ignore the Git login script to keep credentials local
-setup.ipynb
-
-# You can also ignore other common files/folders
-__pycache__/
-*.ipynb_checkpoints
-*.secret
-*.key
-*.json
