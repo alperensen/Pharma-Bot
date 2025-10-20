@@ -40,6 +40,8 @@ def setup_sidebar():
             "It uses a Retrieval-Augmented Generation (RAG) pipeline to provide accurate, "
             "context-aware answers."
         )
+        st.warning("**Disclaimer: I am an AI assistant, not a medical professional. This information is for educational purposes only. Please consult with a qualified healthcare provider for any health concerns or before making any medical decisions.**"
+        )
         st.markdown("---")
         st.header("Technical Details")
         st.markdown(
