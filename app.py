@@ -48,6 +48,15 @@ def main():
             "information from the openFDA database, powered by Google Gemini."
         )
         st.warning("Disclaimer: This is a proof-of-concept and not a substitute for professional medical advice.")
+        st.markdown("---")
+        st.header("Technical Details")
+        st.markdown(
+            f"""
+            - **LLM Model:** `{config.LLM_MODEL_ID}`
+            - **Embedding Model:** `{config.EMBEDDING_MODEL_NAME}`
+            - **Vector Store:** LlamaIndex
+            """
+        )
 
     st.title("💊 PharmaBot Assistant")
     st.caption("Your AI assistant for drug information, powered by FDA data & Google Gemini.")
