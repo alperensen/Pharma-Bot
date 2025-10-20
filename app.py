@@ -71,13 +71,6 @@ def handle_user_input(chat_engine):
                 response = chat_engine.chat(prompt)
                 st.write(str(response))
 
-                # Display the sources if available
-                if hasattr(response, 'source_nodes'):
-                    with st.expander("View Retrieved Sources"):
-                        for i, node in enumerate(response.source_nodes):
-                            st.markdown(f"**Source {i+1} (Similarity: {node.score:.4f})**")
-                            st.info(node.get_content())
-        
         st.session_state.messages.append({"role": "assistant", "content": str(response)})
 
 import time
