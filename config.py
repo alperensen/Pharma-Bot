@@ -9,8 +9,8 @@
 LLM_MODEL_ID = "gemini-2.0-flash-001"
 
 # The embedding model for converting text to vectors
-#EMBEDDING_MODEL_NAME = "/Users/berk/Library/Mobile Documents/com~apple~CloudDocs/Belgeler/Akademik/Bootcamp/AkbankAI/Pharma-Bot/dmis-lab_biobert-v1.1"
-EMBEDDING_MODEL_NAME = "/Users/berk/Library/Mobile Documents/com~apple~CloudDocs/Belgeler/Akademik/Bootcamp/AkbankAI/Pharma-Bot/pritamdeka_S-BioBert-snli-multinli-stsb"
+
+EMBEDDING_MODEL_NAME = "pritamdeka/S-BioBert-snli-multinli-stsb"
 
 # --- File Paths ---
 # Path to the raw data downloaded from the openFDA API
@@ -27,6 +27,6 @@ LLAMA_INDEX_STORE_PATH = "./llamaIndexVectorBase_medQuad"
 # =================================================================================
 # Data Source Paths
 # =================================================================================
-HEALTHCARE_MAGIC_PATH = "../healthCareMagic/HealthCareMagic-100k.json"
+##HEALTHCARE_MAGIC_PATH = "../healthCareMagic/HealthCareMagic-100k.json"
 ##MEDQUAD_PATH = "../medQuad/medDataset.json"
 

@@ -17,7 +17,16 @@ def initialize_llm_and_embed_model():
     llm = Gemini(model_name=config.LLM_MODEL_ID, temperature=0.2)
     
     print(f"Loading embedding model: {config.EMBEDDING_MODEL_NAME}...")
-    embed_model = HuggingFaceEmbedding(model_name=config.EMBEDDING_MODEL_NAME)
+    
+    # Get the token from environment variables
+    hf_token = os.getenv("HUGGING_FACE_TOKEN")
+    if not hf_token:
+        print("Warning: HUGGING_FACE_TOKEN environment variable not set.")
+
+    embed_model = HuggingFaceEmbedding(
+        model_name=config.EMBEDDING_MODEL_NAME,
+        token=hf_token
+    )
     
     # Set the global models for LlamaIndex
     Settings.llm = llm
