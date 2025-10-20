@@ -85,8 +85,9 @@ import time
 # --- Main Application Logic ---
 def main():
     """Main function to run the Streamlit app."""
+    st.set_page_config(page_title="PharmaBot Assistant", page_icon="💊")
     initialize_state()
-    st.title("🤖 PharmaBot: Your AI Pharmaceutical Assistant")
+    st.title("💊 PharmaBot: Your AI Pharmaceutical Assistant")
     setup_sidebar()
 
     # Initialize the RAG pipeline if it hasn't been already
