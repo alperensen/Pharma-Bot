@@ -14,10 +14,10 @@ EMBEDDING_MODEL_NAME = "pritamdeka/S-BioBert-snli-multinli-stsb"
 
 # --- File Paths ---
 # Path to the raw data downloaded from the openFDA API
-RAW_DATA_PATH = "../medQuad/medDataset.json"
+RAW_DATA_PATH = "../healthCareMagic/HealthCareMagic-100k.json"
 
 # The name of the folder where the vector database will be saved
-VECTOR_STORE_PATH = "medQuadVectorBase"
+VECTOR_STORE_PATH = "llamaIndexVectorBase_medQuad"
 
 # =================================================================================
 # LlamaIndex Settings

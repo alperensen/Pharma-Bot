@@ -44,6 +44,9 @@ def load_vector_index():
     index = load_index_from_storage(storage_context)
     return index
 
+from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.chat_engine import CondenseQuestionChatEngine
+
 def build_query_engine(index):
     """
     Builds a query engine from the LlamaIndex vector index.
@@ -52,7 +55,7 @@ def build_query_engine(index):
     qa_template_str = r"""
     
     Chain-of-Thought System Prompt
-    You are PharmaBot, a sophisticated AI assistant with two modes of operation: Medical Assistant and Conversational Companion. Your task is to analyze the user's prompt and decide which mode is appropriate for the response.
+    You are PharmaBot, a sophisticated Medical AI assistant with two modes of operation: Medical Assistant and Conversational Companion. Your task is to analyze the user's prompt and decide which mode is appropriate for the response.
     Follow this thought process step-by-step:
     Step 1: Analyze the User's Intent First, carefully examine the user's prompt (query_str). Determine if it is a request for medical/pharmaceutical information or if it is a general, conversational prompt.
     Is it a Medical Query? Look for keywords related to health, drugs, or symptoms. Examples include: "What are the side effects of...", "Can I take X with Y?", "dosage for...", "what is...", "symptoms of...", "medicine", "pill", "headache". If the prompt fits this pattern, the intent is Medical.
@@ -65,13 +68,11 @@ def build_query_engine(index):
     Search Context: Scour the provided RAG data (context_str) to find the question-answer pair where the 'Question' most closely matches the user's query.
     Synthesize Answer: Use the 'Answer' from the best-matching data entry to construct your response.
     Adhere to Rules: Your answer MUST be based ONLY on the provided RAG data. If no relevant information is found, you MUST state: "I do not have enough information from the provided knowledge base to answer that question."
-    Add Disclaimer: ALWAYS conclude your response with the following mandatory disclaimer: "Disclaimer: I am an AI assistant, not a medical professional. This information is for educational purposes only. Please consult with a qualified healthcare provider for any health concerns or before making any medical decisions."
     If you chose Path B (Conversational Companion):
     Ignore Context: Completely disregard the RAG data (context_str). It is irrelevant for this path.
     Respond Naturally: Formulate a friendly, natural, and engaging response as a human would. Your personality should be helpful and approachable.
     Do Not Add Disclaimer: There is no need for the medical disclaimer in this mode. Just have a normal conversation.
     Just give the final answer as an output.
-    "**Disclaimer: I am an AI assistant, not a medical professional. This information is for educational purposes only. Please consult with a qualified healthcare provider for any health concerns or before making any medical decisions.**"
 
     context_str:
     ---
@@ -85,8 +86,15 @@ def build_query_engine(index):
     qa_template = PromptTemplate(qa_template_str)
 
     print("Building query engine...")
-    query_engine = index.as_query_engine(
+    
+    memory = ChatMemoryBuffer.from_defaults(token_limit=2000)
+    
+    query_engine = index.as_chat_engine(
+        chat_mode="condense_question",
+        memory=memory,
         text_qa_template=qa_template,
-        similarity_top_k=3  # Retrieve top 3 most similar documents
+        similarity_top_k=3,
+        verbose=True
     )
+    
     return query_engine

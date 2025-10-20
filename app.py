@@ -59,7 +59,7 @@ def display_chat_history():
         with st.chat_message(message["role"]):
             st.write(message["content"])
 
-def handle_user_input(query_engine):
+def handle_user_input(chat_engine):
     """Handles user input and displays the response."""
     if prompt := st.chat_input("Ask me anything about pharmaceuticals..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
@@ -68,16 +68,19 @@ def handle_user_input(query_engine):
 
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                response = query_engine.query(prompt)
+                response = chat_engine.chat(prompt)
                 st.write(str(response))
 
-                # Display the sources
-                with st.expander("View Retrieved Sources"):
-                    for i, node in enumerate(response.source_nodes):
-                        st.markdown(f"**Source {i+1} (Similarity: {node.score:.4f})**")
-                        st.info(node.get_content())
+                # Display the sources if available
+                if hasattr(response, 'source_nodes'):
+                    with st.expander("View Retrieved Sources"):
+                        for i, node in enumerate(response.source_nodes):
+                            st.markdown(f"**Source {i+1} (Similarity: {node.score:.4f})**")
+                            st.info(node.get_content())
         
         st.session_state.messages.append({"role": "assistant", "content": str(response)})
+
+import time
 
 # --- Main Application Logic ---
 def main():
@@ -88,20 +91,31 @@ def main():
 
     # Initialize the RAG pipeline if it hasn't been already
     if not st.session_state.initialized:
-        with st.spinner("Initializing the RAG pipeline... This may take a moment."):
+        with st.status("Initializing the RAG pipeline...", expanded=True) as status:
             try:
+                status.write("Step 1/3: Initializing LLM and embedding models...")
                 rag_pipeline.initialize_llm_and_embed_model()
+
+                status.write("Step 2/3: Loading vector index from storage...")
                 index = rag_pipeline.load_vector_index()
+
+                status.write("Step 3/3: Building the conversational chat engine...")
                 st.session_state.query_engine = rag_pipeline.build_query_engine(index)
+                
                 st.session_state.initialized = True
-                st.rerun() # Rerun to clear the spinner and show the chat
+                status.update(label="Initialization Complete!", state="complete", expanded=False)
+                time.sleep(1) # Brief pause to show completion
+
             except FileNotFoundError as e:
+                status.update(label="Initialization Failed", state="error")
                 st.error(f"Error: {e}. Please make sure the vector store is built.")
                 st.warning("To build the vector store, run `python build_knowledge_base.py` from your terminal.")
                 return
             except Exception as e:
+                status.update(label="Initialization Failed", state="error")
                 st.error(f"An unexpected error occurred during initialization: {e}")
                 return
+        st.rerun()
 
     # Display chat and handle input if initialized
     if st.session_state.initialized:

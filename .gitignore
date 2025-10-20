@@ -12,7 +12,7 @@ venv/
 .env
 
 # Local Data & Models
-llamaIndexVectorBase_healtcareMagic/
+llamaIndexVectorBase_healthcareMagic/
 llamaIndexVectorBase_medQuad/
 hf_cache/
 pritamdeka_S-BioBert-snli-multinli-stsb/
