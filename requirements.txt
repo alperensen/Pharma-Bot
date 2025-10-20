@@ -7,3 +7,6 @@ sentence-transformers
 torch
 transformers
 huggingface-hub
+google-generativeai
+tqdm
+llama-index-agent-react

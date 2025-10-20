@@ -3,12 +3,9 @@
 # =================================================================================
 import json
 import re
-from langchain_community.docstore.document import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from llama_index.core import Document
 from tqdm import tqdm
 import config
-import healthcare_data_processing
-import medquad_data_processing
 
 def clean_text(text: str) -> str:
     """
@@ -80,30 +77,65 @@ def load_and_prepare_documents(json_path=config.RAW_DATA_PATH):
     print(f"Created a total of {len(all_docs)} 'Document' objects after filtering.")
     return all_docs
 
-def split_documents(documents):
-    """
-    Splits the given documents into smaller chunks.
-    """
-    print("Splitting documents into chunks...")
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
-    split_docs = text_splitter.split_documents(documents)
-    print(f"Created a total of {len(split_docs)} chunks.")
-    return split_docs
-
 def load_and_process_all():
     """
     Loads and processes documents from all configured data sources.
     """
     all_docs = []
 
+    # Process FDA drug data
+    fda_docs = load_and_prepare_fda_documents()
+    all_docs.extend(fda_docs)
+
     # Process HealthCareMagic data
-    healthcare_docs = healthcare_data_processing.load_and_prepare_documents(config.HEALTHCARE_MAGIC_PATH)
-    all_docs.extend(healthcare_docs)
+    # healthcare_docs = healthcare_data_processing.load_and_prepare_documents(config.HEALTHCARE_MAGIC_PATH)
+    # all_docs.extend(healthcare_docs)
 
     '''# Process MedQuad data
     medquad_docs = medquad_data_processing.load_and_prepare_documents(config.MEDQUAD_PATH)
     all_docs.extend(medquad_docs)'''
 
     print(f"Total documents loaded from all sources: {len(all_docs)}")
+    return all_docs
+
+def load_and_prepare_fda_documents(json_path=config.CLEANED_DATA_PATH):
+    """
+    Loads cleaned drug data from the JSON file and converts it into
+    a list of LangChain Document objects for the RAG pipeline.
+    """
+    print(f"Loading cleaned drug data from: {json_path}...")
+    try:
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        print(f"Error: The file '{json_path}' was not found.")
+        return []
+    except json.JSONDecodeError:
+        print(f"Error: Could not decode JSON from '{json_path}'.")
+        return []
+
+    all_docs = []
+    print("Converting cleaned data to 'Document' objects...")
+    for entry in tqdm(data, desc="Processing cleaned drug data"):
+        brand_name = entry.get("brand_name", "Unknown Brand")
+        generic_name = entry.get("generic_name", "Unknown Generic")
+        
+        # Combine all sections into a single text block for context
+        full_text = f"Brand Name: {brand_name}\nGeneric Name: {generic_name}\n\n"
+        
+        sections = entry.get("sections", {})
+        for section_name, section_text in sections.items():
+            full_text += f"--- {section_name} ---\n{section_text}\n\n"
+            
+        if sections:
+            metadata = {
+                "brand_name": brand_name,
+                "generic_name": generic_name,
+                "source": "FDA Drug Labels"
+            }
+            doc = Document(page_content=full_text.strip(), metadata=metadata)
+            all_docs.append(doc)
+
+    print(f"Created {len(all_docs)} 'Document' objects from the cleaned FDA data.")
     return all_docs
 

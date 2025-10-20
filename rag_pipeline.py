@@ -6,6 +6,7 @@ from llama_index.llms.gemini import Gemini
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 import config
 import os
 
@@ -14,7 +15,21 @@ def initialize_llm_and_embed_model():
     Initializes and sets the global LLM and embedding model for LlamaIndex.
     """
     print(f"Initializing Gemini model: {config.LLM_MODEL_ID}...")
-    llm = Gemini(model_name=config.LLM_MODEL_ID, temperature=0.2)
+    
+    # Define safety settings to be less restrictive, especially for medical content
+    safety_settings = {
+        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+    }
+
+    llm = Gemini(
+        model_name=config.LLM_MODEL_ID, 
+        temperature=0.2,
+        safety_settings=safety_settings,
+        generation_config={"candidate_count": 1}
+    )
     
     print(f"Loading embedding model: {config.EMBEDDING_MODEL_NAME}...")
     
@@ -47,45 +62,71 @@ def load_vector_index():
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
 
+from llama_index.core.agent import ReActAgent
+from llama_index.core.tools import QueryEngineTool, ToolMetadata
+
 def build_query_engine(index):
     """
-    Builds a query engine from the LlamaIndex vector index.
+    Builds a ReAct Agent-based chat engine for sophisticated, multi-step conversations.
     """
-    # --- FINAL REFINED INVESTIGATIVE PROMPT ---
-    qa_template_str = (
-        "You are PharmaBot, an AI medical investigator. Your mission is to guide the user through a diagnostic conversation to understand their health issue fully before providing an answer from your knowledge base.\n\n"
-        "Here is the conversation history for context:\n"
-        "---------------------\n"
-        "{chat_history}\n"
-        "---------------------\n\n"
-        "Follow these steps meticulously:\n"
-        "1.  **Review the full conversation history.** Understand the user's initial problem and the information they have provided in subsequent turns.\n\n"
-        "2.  **Assess Information Sufficiency.** Based on the entire history, decide if you have enough specific detail to provide a high-quality answer. Ask yourself: 'Do I know the key symptoms, duration, and context of the user's problem?'\n"
-        "    - **If NO:** The information is still vague. You must ask another targeted, clarifying question to get more detail. Do not answer yet. Formulate a question that builds on the previous turn.\n"
-        "    - **If YES:** You have enough detail. Proceed to the next step.\n\n"
-        "3.  **Synthesize the Final Answer.**\n"
-        "    - Formulate a clear, standalone question that summarizes the user's complete health issue (e.g., 'What are the treatments for a sharp, localized headache that has lasted for two days?').\n"
-        "    - Search the provided context (`{context_str}`) using this synthesized question.\n"
-        "    - Provide a direct, concise answer based ONLY on the retrieved context.\n"
-        "    - If the context does not contain the answer, you MUST state: 'I have gathered enough information, but my knowledge base does not contain an answer for your specific issue.'\n\n"
-        "4.  **Final Output:** Your output must be ONLY the clarifying question or the final answer. Do not show your internal monologue or reasoning.\n\n"
-        "---------------------\n"
-        "Context: {context_str}\n"
-        "Question: {query_str}\n"
-        "Response: "
+    # 1. Define the Tool: A standard query engine for the knowledge base.
+    # This engine has a simple, direct prompt for answering based on context.
+    qa_engine = index.as_query_engine(
+        similarity_top_k=5,
+        # This template is ONLY for the final answer synthesis from documents
+        text_qa_template=PromptTemplate(
+            "You are an expert at extracting and synthesizing information from medical drug labels.\n"
+            "Based ONLY on the context provided below, answer the user's question.\n"
+            "If the context does not contain the answer, state that the information is not available in the knowledge base.\n"
+            "---------------------\n"
+            "Context: {context_str}\n"
+            "Question: {query_str}\n"
+            "Answer: "
+        )
     )
-    qa_template = PromptTemplate(qa_template_str)
 
-    print("Building query engine...")
-    
-    memory = ChatMemoryBuffer.from_defaults(token_limit=2000)
-    
-    query_engine = index.as_chat_engine(
-        chat_mode="condense_question",
+    query_engine_tool = QueryEngineTool(
+        query_engine=qa_engine,
+        metadata=ToolMetadata(
+            name="drug_knowledge_base",
+            description=(
+                "Provides information about pharmaceutical drugs, including usage, dosage, side effects, "
+                "contraindications, and warnings. Use this tool when you have gathered enough specific information "
+                "from the user to answer a medical or drug-related question."
+            ),
+        ),
+    )
+
+    # 2. Define the Agent: A ReActAgent that can reason and use the tool.
+    # The system prompt is the core of the agent's behavior.
+    system_prompt = (
+        "You are PharmaBot, a sophisticated AI assistant with a dynamic 'doctor' persona. Your primary goal is to help users by providing information from a trusted drug knowledge base.\n\n"
+        "## Your Core Logic:\n"
+        "1.  **Triage Input:** First, understand the user's intent.\n"
+        "    -   If the user is having a casual conversation (e.g., 'hello', 'thank you'), respond naturally and friendly. Do not use your tool.\n"
+        "    -   If the user asks a medical question or describes symptoms, begin your diagnostic investigation.\n\n"
+        "2.  **Investigative Process (for Medical Queries):\n"
+        "    -   **Goal:** Your goal is to gather specific, actionable details before using your `drug_knowledge_base` tool. You need to understand the 'what', 'how long', 'where', etc.\n"
+        "    -   **Natural Conversation:** Ask clarifying questions one at a time, in a natural, empathetic, and conversational manner. Do not be robotic. Vary your phrasing.\n"
+        "    -   **Reasoning:** In your internal thoughts, explain WHY you are asking a question (e.g., 'Thought: The user mentioned a headache. I need to know the type and location before I can search for relevant information. I will ask a clarifying question.').\n"
+        "    -   **Tool Trigger:** Once you have gathered enough detail to form a specific query (e.g., you know the drug name, or you have 2-3 specific symptoms), you MUST use the `drug_knowledge_base` tool.\n\n"
+        "3.  **Synthesizing the Final Answer:\n"
+        "    -   After using the tool, you will get an observation with the information. Synthesize this information into a clear, easy-to-understand response in the persona of a caring doctor talking to a patient.\n"
+        "    -   If the tool observation indicates the information is not available, inform the user gracefully.\n"
+        "    -   **Crucially, you MUST end your final medical answer with this exact disclaimer, without any changes:**\n\n"
+        "        ---\n"
+        "        **Disclaimer:** I am an AI assistant, not a medical professional. This information is for educational purposes only and is based on official drug labeling. It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.\n"
+    )
+
+    memory = ChatMemoryBuffer.from_defaults(token_limit=4000)
+
+    # Use the ReActAgent as the chat engine
+    chat_engine = ReActAgent.from_tools(
+        tools=[query_engine_tool],
+        llm=Settings.llm,
         memory=memory,
-        text_qa_template=qa_template,
-        similarity_top_k=3,
+        system_prompt=system_prompt,
         verbose=True
     )
-    
-    return query_engine
+
+    return chat_engine

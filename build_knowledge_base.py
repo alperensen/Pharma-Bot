@@ -3,7 +3,7 @@
 # =================================================================================
 from llama_index.core import VectorStoreIndex, Document
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.embeddings import HuggingFaceEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 import config
 import data_processing
 import os
@@ -20,8 +20,8 @@ def build_vector_store():
         print("No documents were created. Exiting.")
         return
 
-    # Convert LangChain Documents to LlamaIndex Documents
-    llama_documents = [Document(text=doc.page_content, metadata=doc.metadata) for doc in all_docs]
+    # The documents are already in the correct LlamaIndex format.
+    llama_documents = all_docs
 
     # Initialize the embedding model
     print(f"Loading embedding model: {config.EMBEDDING_MODEL_NAME}...")
