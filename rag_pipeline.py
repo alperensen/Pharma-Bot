@@ -62,71 +62,44 @@ def load_vector_index():
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
 
-from llama_index.core.agent import ReActAgent
-from llama_index.core.tools import QueryEngineTool, ToolMetadata
-
 def build_query_engine(index):
     """
-    Builds a ReAct Agent-based chat engine for sophisticated, multi-step conversations.
+    Builds a query engine from the LlamaIndex vector index.
     """
-    # 1. Define the Tool: A standard query engine for the knowledge base.
-    # This engine has a simple, direct prompt for answering based on context.
-    qa_engine = index.as_query_engine(
-        similarity_top_k=5,
-        # This template is ONLY for the final answer synthesis from documents
-        text_qa_template=PromptTemplate(
-            "You are an expert at extracting and synthesizing information from medical drug labels.\n"
-            "Based ONLY on the context provided below, answer the user's question.\n"
-            "If the context does not contain the answer, state that the information is not available in the knowledge base.\n"
-            "---------------------\n"
-            "Context: {context_str}\n"
-            "Question: {query_str}\n"
-            "Answer: "
-        )
+    qa_template_str = (
+        "You are PharmaBot, a friendly and conversational AI assistant. Your primary goal is to provide helpful pharmaceutical information based on the provided context.\n\n"
+        "**Step 1: Determine User Intent**\n"
+        "First, analyze the user's query (`{query_str}`).\n"
+        "- If it's **Small Talk** (e.g., 'hello', 'how are you?'), engage in a friendly, natural conversation. Do not use the medical context or provide a disclaimer.\n"
+        "- If it's a **Medical Question**, proceed to the next step.\n\n"
+        "**Step 2: Formulate a Conclusive Answer**\n"
+        "Your main goal is to answer the user's question (`{query_str}`) using the provided context (`{context_str}`). Do not ask for more information. Provide the best possible answer with the information you have.\n\n"
+        "Structure your response in two parts:\n"
+        "1.  **Reasoning:** Briefly explain how you arrived at your answer, referencing the context. For example: 'Based on the "'indications_and_usage'" section, the medication is used for...'\n"
+        "    - If the context does not contain enough information to answer the question, state that here. For example: 'The provided context does not contain specific information about headaches.'\n"
+        "2.  **Answer:** Provide the final, user-facing answer based on your reasoning. If the context was insufficient, inform the user and suggest they ask a more specific question (e.g., about a particular drug).\n\n"
+        "**Step 3: Include Disclaimer**\n"
+        "At the end of EVERY medical-related response, you MUST include: 'Disclaimer: I am an AI assistant and not a medical professional. Please consult with a doctor or pharmacist for medical advice.'\n\n"
+        "Context for medical queries: \n"
+        "---------------------\n"
+        "{context_str}\n"
+        "---------------------\n"
+        "Question: {query_str}\n"
+        "Reasoning: \n"
+        "Answer: "
     )
+    qa_template = PromptTemplate(qa_template_str)
 
-    query_engine_tool = QueryEngineTool(
-        query_engine=qa_engine,
-        metadata=ToolMetadata(
-            name="drug_knowledge_base",
-            description=(
-                "Provides information about pharmaceutical drugs, including usage, dosage, side effects, "
-                "contraindications, and warnings. Use this tool when you have gathered enough specific information "
-                "from the user to answer a medical or drug-related question."
-            ),
-        ),
-    )
-
-    # 2. Define the Agent: A ReActAgent that can reason and use the tool.
-    # The system prompt is the core of the agent's behavior.
-    system_prompt = (
-        "You are PharmaBot, a sophisticated AI assistant with a dynamic 'doctor' persona. Your primary goal is to help users by providing information from a trusted drug knowledge base.\n\n"
-        "## Your Core Logic:\n"
-        "1.  **Triage Input:** First, understand the user's intent.\n"
-        "    -   If the user is having a casual conversation (e.g., 'hello', 'thank you'), respond naturally and friendly. Do not use your tool.\n"
-        "    -   If the user asks a medical question or describes symptoms, begin your diagnostic investigation.\n\n"
-        "2.  **Investigative Process (for Medical Queries):\n"
-        "    -   **Goal:** Your goal is to gather specific, actionable details before using your `drug_knowledge_base` tool. You need to understand the 'what', 'how long', 'where', etc.\n"
-        "    -   **Natural Conversation:** Ask clarifying questions one at a time, in a natural, empathetic, and conversational manner. Do not be robotic. Vary your phrasing.\n"
-        "    -   **Reasoning:** In your internal thoughts, explain WHY you are asking a question (e.g., 'Thought: The user mentioned a headache. I need to know the type and location before I can search for relevant information. I will ask a clarifying question.').\n"
-        "    -   **Tool Trigger:** Once you have gathered enough detail to form a specific query (e.g., you know the drug name, or you have 2-3 specific symptoms), you MUST use the `drug_knowledge_base` tool.\n\n"
-        "3.  **Synthesizing the Final Answer:\n"
-        "    -   After using the tool, you will get an observation with the information. Synthesize this information into a clear, easy-to-understand response in the persona of a caring doctor talking to a patient.\n"
-        "    -   If the tool observation indicates the information is not available, inform the user gracefully.\n"
-        "    -   **Crucially, you MUST end your final medical answer with this exact disclaimer, without any changes:**\n\n"
-        "        ---\n"
-        "        **Disclaimer:** I am an AI assistant, not a medical professional. This information is for educational purposes only and is based on official drug labeling. It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.\n"
-    )
-
-    memory = ChatMemoryBuffer.from_defaults(token_limit=4000)
-
-    # Use the ReActAgent as the chat engine
-    chat_engine = ReActAgent.from_tools(
-        tools=[query_engine_tool],
-        llm=Settings.llm,
+    print("Building query engine...")
+    
+    memory = ChatMemoryBuffer.from_defaults(token_limit=2000)
+    
+    query_engine = index.as_chat_engine(
+        chat_mode="condense_question",
         memory=memory,
-        system_prompt=system_prompt,
+        text_qa_template=qa_template,
+        similarity_top_k=3,
         verbose=True
     )
-
-    return chat_engine
+    
+    return query_engine
