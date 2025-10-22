@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Environment variables
+.env
+
+# Local Data & Models
+llamaIndexVectorBase_healthcareMagic/
+llamaIndexVectorBase_medQuad/
+llamaIndexVectorBase_fda/
+fda_data/
+hf_cache/
+pritamdeka_S-BioBert-snli-multinli-stsb/
+sentence-transformers_all-MiniLM-L6-v2/
+dmis-lab_biobert-v1.1/
+
+# Temporary scripts
+download_biobert.py
+
+# Documentation
+*.pdf
+
+# IDE / Editor specific
+.vscode/
+.idea/
+*.swp
+*.swo
