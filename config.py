@@ -14,9 +14,9 @@ EMBEDDING_MODEL_NAME = "pritamdeka/S-BioBert-snli-multinli-stsb"
 
 # --- File Paths ---
 # Path to the raw data downloaded from the openFDA API
-RAW_DATA_PATH = "../fda_data/drug_labels_all.json"
+RAW_DATA_PATH = "./fda_data/drug_labels_all.json"
 # Path to the cleaned/processed data
-CLEANED_DATA_PATH = "../fda_data/fda_data_processed.jsonl"
+CLEANED_DATA_PATH = "./fda_data/fda_data_processed.jsonl"
 
 # The name of the folder where the vector database will be saved
 VECTOR_STORE_PATH = "llamaIndexVectorBase_fda"
