@@ -69,14 +69,41 @@ Uygulama, tarayıcınızda otomatik olarak açılacaktır (genellikle http://loc
 ├── .env                       # API anahtarları (git'e eklenmez)
 ├── fda_data/                  # Ham ve işlenmiş FDA verilerinin bulunduğu klasör
 │   ├── drug_labels_all.json
-│   └── drug_labels_cleaned.json
+│   └── fda_data_processed.jsonl
 └── llamaIndexVectorBase_fda/  # Oluşturulan vektör veritabanının saklandığı klasör
 ```
+## �️ Veri Seti ve İşleme Süreci
+
+Bu proje, **openFDA** tarafından sağlanan ve ABD'deki ilaçların etiket bilgilerini içeren halka açık veri setini kullanır. Ham veri, on binlerce ilacın endikasyonları, yan etkileri, dozajları ve uyarıları gibi zengin bilgiler içeren karmaşık bir JSON yapısındadır. RAG modelinin bu veriyi etkin bir şekilde kullanabilmesi için aşağıdaki adımlardan oluşan bir veri işleme boru hattı (`dataPrep.py`) uygulanmıştır:
+
+1.  **Veri Filtreleme ve Temizleme**:
+    *   Ham veri (`drug_labels_all.json`) yüklenir.
+    *   Marka (`brand_name`) veya jenerik isme (`generic_name`) sahip olmayan ya da ilacın kullanım amacını belirten "indications_and_usage" gibi kritik bir bölüme sahip olmayan düşük kaliteli kayıtlar elenir.
+    *   Metin içeriğindeki "REVISED: AA/YYYY" gibi gürültülü veriler ve gereksiz boşluklar temizlenir.
+
+2.  **Tekilleştirme (Deduplication)**:
+    *   Aynı ilaca ait birden fazla kaydın bulunmasını önlemek için marka ve jenerik isme göre tekilleştirme yapılır. Bu, bilgi tabanının daha tutarlı ve verimli olmasını sağlar.
+
+3.  **Formatlama ve Yapılandırma**:
+    *   Temizlenmiş ve tekilleştirilmiş veriler, her bir satırın tek bir ilaç bölümünü (örneğin, bir ilacın "Yan Etkileri" bölümü) temsil ettiği bir **JSON Lines (.jsonl)** formatına (`fda_data_processed.jsonl`) dönüştürülür.
+    *   Her kayıt, `doc_id`, `generic_name`, `section` (bölüm başlığı) ve `content` (içerik) gibi alanları içeren yapılandırılmış bir formata getirilir.
+
+    **Örnek JSON Line Çıktısı:**
+    ```json
+    {
+        "doc_id": "IBUPROFEN_adverse_reactions",
+        "generic_name": "IBUPROFEN",
+        "section": "Adverse Reactions",
+        "content": "The most frequent type of adverse reaction occurring with ibuprofen is gastrointestinal..."
+    }
+    ```
+
+Bu süreç sonunda, RAG pipeline'ı için optimize edilmiş, temiz ve yapılandırılmış bir bilgi kaynağı oluşturulur. `data_processing.py` script'i bu son dosyayı okuyarak LlamaIndex `Document` nesneleri oluşturur ve bilgi tabanının temelini atar.
 
 ## 💡 Nasıl Çalışır?
 
-1.  **Veri Organizasyonu**: `dataOrganize.py` script'i, ham `drug_labels_all.json` dosyasını okur, gereksiz bilgileri temizler ve RAG için uygun bir formatta `drug_labels_cleaned.json` olarak kaydeder.
-2.  **Bilgi Tabanı Oluşturma**: `build_knowledge_base.py` script'i `drug_labels_cleaned.json` dosyasını okur.
+1.  **Veri Organizasyonu**: `dataOrganize.py` script'i, ham `drug_labels_all.json` dosyasını okur, gereksiz bilgileri temizler ve RAG için uygun bir formatta `fda_data_processed.jsonl` olarak kaydeder.
+2.  **Bilgi Tabanı Oluşturma**: `build_knowledge_base.py` script'i `fda_data_processed.jsonl` dosyasını okur.
 3.  **Embedding**: Her ilaç bilgisi, BioBert embedding modeli ile vektörlere dönüştürülür.
 4.  **Vektör Veritabanı**: Bu vektörler, LlamaIndex kullanılarak disk üzerinde `llamaIndexVectorBase_fda/` klasöründe saklanır.
 5.  **Diyalog Yönetimi**: Kullanıcı bir soru sorduğunda, `ReActAgent` devreye girer.
@@ -92,7 +119,7 @@ Uygulama, tarayıcınızda otomatik olarak açılacaktır (genellikle http://loc
 
 ## ⚠️ Önemli Notlar
 
-- Uygulama ilk kez çalıştığında, `drug_labels_cleaned.json` dosyasından bilgi tabanını oluşturacaktır. Bu işlem, bilgisayarınızın performansına bağlı olarak birkaç dakika sürebilir.
+- Uygulama ilk kez çalıştığında, `fda_data_processed.jsonl` dosyasından bilgi tabanını oluşturacaktır. Bu işlem, bilgisayarınızın performansına bağlı olarak birkaç dakika sürebilir.
 - Sonraki çalıştırmalarda, uygulama mevcut bilgi tabanını kullanacağı için çok daha hızlı başlayacaktır.
 - Proje, tıbbi tavsiye vermek yerine, yalnızca FDA verilerine dayalı olarak bilgi sunar. Her yanıtın sonunda yasal bir uyarı metni bulunur.
 
