@@ -1,6 +1,6 @@
 # 💊 Pharma-Bot: İlaç Bilgi Asistanı
 
-Generative AI 101 Bootcamp için hazırlanmış, FDA (Amerikan Gıda ve İlaç Dairesi) ilaç etiket verilerini kullanan RAG (Retrieval-Augmented Generation) tabanlı bir chatbot projesi.
+Akbank Generative AI 101 Bootcamp için hazırlanmış, FDA (Amerikan Gıda ve İlaç Dairesi) ilaç etiket verilerini kullanan RAG (Retrieval-Augmented Generation) tabanlı bir chatbot projesi.
 
 ## Canlı Link
 
