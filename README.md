@@ -2,6 +2,10 @@
 
 Generative AI 101 Bootcamp için hazırlanmış, FDA (Amerikan Gıda ve İlaç Dairesi) ilaç etiket verilerini kullanan RAG (Retrieval-Augmented Generation) tabanlı bir chatbot projesi.
 
+## Canlı Link
+
+https://huggingface.co/spaces/alperensn/PharmaBot
+
 ## 📋 Proje Hakkında
 
 Bu proje, kullanıcıların ilaçlar ve semptomlar hakkında sorular sorabileceği bir AI asistanı oluşturur. Asistan, FDA'in geniş ilaç veri setini kullanarak, kullanıcıların sorularına ilgili ilaç etiketlerinden bilgi çekerek yanıt verir. Proje, basit soru-cevap mekanizmasının ötesine geçerek, kullanıcının semptomlarını anlamak için ek sorular soran bir diyalog akışına sahiptir.
