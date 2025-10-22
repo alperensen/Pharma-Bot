@@ -2,10 +2,11 @@ import json
 import re
 from tqdm import tqdm
 import os
+import config
 
 # Define file paths
-INPUT_JSON_PATH = os.path.join('fda_data', 'drug_labels_all.json')
-OUTPUT_JSON_PATH = os.path.join('fda_data', 'drug_labels_cleaned.json')
+INPUT_JSON_PATH = config.RAW_DATA_PATH
+OUTPUT_JSON_PATH = config.CLEANED_DATA_PATH
 
 def clean_text(text: str) -> str:
     """

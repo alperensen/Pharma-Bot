@@ -100,41 +100,38 @@ def load_and_process_all():
 
 def load_and_prepare_fda_documents(json_path=config.CLEANED_DATA_PATH):
     """
-    Loads cleaned drug data from the JSON file and converts it into
-    a list of LangChain Document objects for the RAG pipeline.
+    Loads cleaned drug data from a JSON Lines file and converts it into
+    a list of LlamaIndex Document objects for the RAG pipeline.
     """
     print(f"Loading cleaned drug data from: {json_path}...")
+    all_docs = []
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+            for line in tqdm(f, desc="Processing cleaned drug data"):
+                entry = json.loads(line)
+                
+                content = entry.get("content")
+                if not content:
+                    continue
+
+                metadata = {
+                    "doc_id": entry.get("doc_id"),
+                    "brand_name": entry.get("brand_name"),
+                    "generic_name": entry.get("generic_name"),
+                    "section": entry.get("section"),
+                    "source": "FDA Drug Labels"
+                }
+                
+                # The text for the document is just the content of the section
+                doc = Document(text=content, metadata=metadata)
+                all_docs.append(doc)
+
     except FileNotFoundError:
         print(f"Error: The file '{json_path}' was not found.")
         return []
-    except json.JSONDecodeError:
-        print(f"Error: Could not decode JSON from '{json_path}'.")
+    except json.JSONDecodeError as e:
+        print(f"Error: Could not decode JSON from a line in '{json_path}'. Details: {e}")
         return []
-
-    all_docs = []
-    print("Converting cleaned data to 'Document' objects...")
-    for entry in tqdm(data, desc="Processing cleaned drug data"):
-        brand_name = entry.get("brand_name", "Unknown Brand")
-        generic_name = entry.get("generic_name", "Unknown Generic")
-        
-        # Combine all sections into a single text block for context
-        full_text = f"Brand Name: {brand_name}\nGeneric Name: {generic_name}\n\n"
-        
-        sections = entry.get("sections", {})
-        for section_name, section_text in sections.items():
-            full_text += f"--- {section_name} ---\n{section_text}\n\n"
-            
-        if sections:
-            metadata = {
-                "brand_name": brand_name,
-                "generic_name": generic_name,
-                "source": "FDA Drug Labels"
-            }
-            doc = Document(page_content=full_text.strip(), metadata=metadata)
-            all_docs.append(doc)
 
     print(f"Created {len(all_docs)} 'Document' objects from the cleaned FDA data.")
     return all_docs

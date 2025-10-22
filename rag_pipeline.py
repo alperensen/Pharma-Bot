@@ -107,7 +107,6 @@ def build_query_engine(index):
         "   Present 2-3 FDA-approved medication options with: Type, Used For, Dosage, Key Warning\n"
         "8. SAFETY:\n"
         "   - Only use info from context for medical responses\n"
-        "   - Never diagnose or prescribe\n"
         "   - If details missing from context, state explicitly\n"
         "   - ALWAYS end medical responses with:\n"
         "   ⚠️ Disclaimer: I am an AI assistant, not a medical professional. This information is from FDA labels and is for educational purposes only. Always consult your doctor or pharmacist before taking any medication.\n"
