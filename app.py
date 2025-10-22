@@ -68,14 +68,15 @@ def handle_user_input(chat_engine):
 
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                response = chat_engine.chat(prompt)
-                st.write(str(response))
+                # Use the .query() method for conversational interaction with a ReActAgent
+                response = chat_engine.query(prompt)
+                # The agent's response is in the .response attribute
+                response_text = str(response.response)
+                st.write(response_text)
 
-        st.session_state.messages.append({"role": "assistant", "content": str(response)})
+        st.session_state.messages.append({"role": "assistant", "content": response_text})
 
 import time
-from build_knowledge_base import build_vector_store
-import os
 
 # --- Main Application Logic ---
 def main():
@@ -87,19 +88,6 @@ def main():
 
     # Initialize the RAG pipeline if it hasn't been already
     if not st.session_state.initialized:
-        # Check if the vector store needs to be built
-        if not os.path.exists(config.LLAMA_INDEX_STORE_PATH):
-            with st.status("Knowledge base not found. Building now...", expanded=True) as status:
-                try:
-                    status.write("This is a one-time setup and may take a few minutes...")
-                    build_vector_store()
-                    status.update(label="Knowledge base built successfully!", state="complete", expanded=False)
-                    time.sleep(2)
-                except Exception as e:
-                    status.update(label="Build Failed", state="error", expanded=True)
-                    st.error(f"An error occurred while building the knowledge base: {e}")
-                    st.stop()
-
         with st.status("Initializing the RAG pipeline...", expanded=True) as status:
             try:
                 status.write("Step 1/3: Initializing LLM and embedding models...")
@@ -115,6 +103,11 @@ def main():
                 status.update(label="Initialization Complete!", state="complete", expanded=False)
                 time.sleep(1) # Brief pause to show completion
 
+            except FileNotFoundError as e:
+                status.update(label="Initialization Failed", state="error")
+                st.error(f"Error: {e}. Please make sure the vector store is built.")
+                st.warning("To build the vector store, run `python build_knowledge_base.py` from your terminal.")
+                return
             except Exception as e:
                 status.update(label="Initialization Failed", state="error")
                 st.error(f"An unexpected error occurred during initialization: {e}")
